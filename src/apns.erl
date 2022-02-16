@@ -26,6 +26,8 @@
         , connect/2
         , wait_for_connection_up/1
         , close_connection/1
+        , cast_push_notification/3
+        , cast_push_notification/4
         , push_notification/3
         , push_notification/4
         , push_notification_token/4
@@ -122,6 +124,30 @@ push_notification(ConnectionId, DeviceId, JSONMap, Headers) ->
                                    , Notification
                                    , Headers
                                    ).
+
+% @doc Push notification to APNs. It will use the headers provided on the
+%%      environment variables.
+-spec cast_push_notification( apns_connection:name() | pid()
+    , device_id()
+    , json()
+) -> ok.
+cast_push_notification(ConnectionId, DeviceId, JSONMap) ->
+  Headers = default_headers(),
+  cast_push_notification(ConnectionId, DeviceId, JSONMap, Headers).
+
+%% @doc Push notification to certificate APNs Connection.
+-spec cast_push_notification( apns_connection:name() | pid()
+    , device_id()
+    , json()
+    , headers()
+) -> ok.
+cast_push_notification(ConnectionId, DeviceId, JSONMap, Headers) ->
+  Notification = jsx:encode(JSONMap),
+  apns_connection:cast_push_notification( ConnectionId
+    , DeviceId
+    , Notification
+    , Headers
+  ).
 
 %% @doc Push notification to APNs with authentication token. It will use the
 %%      headers provided on the environment variables.
