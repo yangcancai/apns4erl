@@ -358,7 +358,7 @@ handle_common(info,
               _) ->
     {next_state, down, StateData, {next_event, internal, {down, StateName, Reason}}};
 handle_common(info, Info, StateName, StateData, _) ->
-    {noreply, NewS} = gun_loop(Info, StateData),
+    NewS = gun_loop(Info, StateData),
     {next_state, StateName, NewS};
 handle_common(state_timeout,
               EventContent,
