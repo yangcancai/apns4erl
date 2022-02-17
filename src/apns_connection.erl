@@ -145,10 +145,12 @@ push_notification(ConnectionId, DeviceId, Notification, Headers) ->
                              apns:device_id(),
                              notification(),
                              apns:headers()) ->
-                                ok.
+                                reference().
 cast_push_notification(ConnectionId, DeviceId, Notification, Headers) ->
-    gen_statem:cast(ConnectionId,
-                    {self(), {push_notification, DeviceId, Notification, Headers}}).
+    PushRef = make_ref(),
+    ok = gen_statem:cast(ConnectionId,
+                    {self(), PushRef, {push_notification, DeviceId, Notification, Headers}}),
+    PushRef.
 
 %% @doc Pushes notification to certificate APNs connection.
 -spec push_notification(name() | pid(),
@@ -296,7 +298,7 @@ connected(internal, on_connect, #{client := Client}) ->
     Client ! {connection_up, self()},
     keep_state_and_data;
 connected(cast,
-          {_From, {push_notification, DeviceId, Notification, Headers}} = Req,
+          {_PushRef, _From, {push_notification, DeviceId, Notification, Headers}} = Req,
           #{client := _Client} = StateData) ->
     #{connection := Connection, gun_pid := GunPid} = StateData,
     #{timeout := _Timeout} = Connection,
@@ -504,10 +506,10 @@ backoff(N, Ceiling) ->
     end.
 
 gun_loop({gun_response, _ConnPid, StreamRef, fin, Status, Headers}, State) ->
-    {From, Req} = maps:get(StreamRef, State),
+    {PushRef, From, Req} = maps:get(StreamRef, State),
     io:format("gun_response no_data: req=~p, resp=~p~n",
               [{From, Req}, {Status, Headers, no_body}]),
-    From ! {Req, {Status, Headers, no_body}},
+    gun_resp(From ,{PushRef, Req, {Status, Headers, no_body}}, StreamRef),
     maps:remove(StreamRef, State);
 gun_loop({gun_response, _ConnPid, StreamRef, nofin, Status, Headers}, State) ->
     State#{{StreamRef, headers} => {Status, Headers}};
@@ -515,12 +517,14 @@ gun_loop({gun_data, _ConnPid, StreamRef, nofin, Data}, State) ->
     Old = maps:get({StreamRef, gun_data}, State, <<>>),
     State#{{StreamRef, gun_data} => <<Old/binary, Data/binary>>};
 gun_loop({gun_data, _ConnPid, StreamRef, fin, Data}, State) ->
-    {From, Req} = maps:get(StreamRef, State),
+    {PushRef, From, Req} = maps:get(StreamRef, State),
     Old = maps:get({StreamRef, gun_data}, State, <<>>),
     {Status, Headers} = maps:get({StreamRef, headers}, State),
     AllData = <<Old/binary, Data/binary>>,
     io:format("gun_response data: req=~p, resp=~p~n",
               [{From, Req}, {Status, Headers, AllData}]),
-    From ! {Req, {Status, Headers, AllData}},
+    gun_resp(From, {PushRef, Req, {Status, Headers, AllData}}, StreamRef),
     S1 = maps:remove({StreamRef, gun_data}, State),
     maps:remove(StreamRef, S1).
+gun_resp(From , Data, _StreamRef) ->
+  From ! {gun_resp, Data}.

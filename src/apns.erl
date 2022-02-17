@@ -130,7 +130,7 @@ push_notification(ConnectionId, DeviceId, JSONMap, Headers) ->
 -spec cast_push_notification( apns_connection:name() | pid()
     , device_id()
     , json()
-) -> ok.
+) -> reference().
 cast_push_notification(ConnectionId, DeviceId, JSONMap) ->
   Headers = default_headers(),
   cast_push_notification(ConnectionId, DeviceId, JSONMap, Headers).
@@ -140,7 +140,7 @@ cast_push_notification(ConnectionId, DeviceId, JSONMap) ->
     , device_id()
     , json()
     , headers()
-) -> ok.
+) -> reference().
 cast_push_notification(ConnectionId, DeviceId, JSONMap, Headers) ->
   Notification = jsx:encode(JSONMap),
   apns_connection:cast_push_notification( ConnectionId
