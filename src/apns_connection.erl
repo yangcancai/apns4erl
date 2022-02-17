@@ -507,8 +507,6 @@ backoff(N, Ceiling) ->
 
 gun_loop({gun_response, _ConnPid, StreamRef, fin, Status, Headers}, State) ->
     {PushRef, From, Req} = maps:get(StreamRef, State),
-    io:format("gun_response no_data: req=~p, resp=~p~n",
-              [{From, Req}, {Status, Headers, no_body}]),
     gun_resp(From ,{PushRef, Req, {Status, Headers, no_body}}, StreamRef),
     maps:remove(StreamRef, State);
 gun_loop({gun_response, _ConnPid, StreamRef, nofin, Status, Headers}, State) ->
@@ -521,9 +519,8 @@ gun_loop({gun_data, _ConnPid, StreamRef, fin, Data}, State) ->
     Old = maps:get({StreamRef, gun_data}, State, <<>>),
     {Status, Headers} = maps:get({StreamRef, headers}, State),
     AllData = <<Old/binary, Data/binary>>,
-    io:format("gun_response data: req=~p, resp=~p~n",
-              [{From, Req}, {Status, Headers, AllData}]),
-    gun_resp(From, {PushRef, Req, {Status, Headers, AllData}}, StreamRef),
+    DecodedBody = jsx:decode(AllData, [{return_maps, false}]),
+    gun_resp(From, {PushRef, Req, {Status, Headers, DecodedBody}}, StreamRef),
     S1 = maps:remove({StreamRef, gun_data}, State),
     maps:remove(StreamRef, S1).
 gun_resp(From , Data, _StreamRef) ->
