@@ -149,7 +149,7 @@ push_notification(ConnectionId, DeviceId, Notification, Headers) ->
 cast_push_notification(ConnectionId, DeviceId, Notification, Headers) ->
     PushRef = make_ref(),
     ok = gen_statem:cast(ConnectionId,
-                    {self(), PushRef, {push_notification, DeviceId, Notification, Headers}}),
+                    {PushRef, self(), {push_notification, DeviceId, Notification, Headers}}),
     PushRef.
 
 %% @doc Pushes notification to certificate APNs connection.
