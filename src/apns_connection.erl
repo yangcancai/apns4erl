@@ -409,6 +409,8 @@ certfile(#{certfile := Certfile}) ->
 keydata(#{keydata := Key}) ->
   Key.
 -spec certpassword(connection()) -> list().
+certpassword(#{password := <<>>}) ->
+  [];
 certpassword(#{password := Password}) ->
   [{password, Password}];
 certpassword(_) ->
