@@ -336,8 +336,9 @@ down(internal
        , client          := Client
        , backoff         := Backoff
        , backoff_ceiling := Ceiling
+       ,connection := Connection
        }) ->
-  error_logger:error_msg("Client = ~p down, reason = ~p",[Client, Reason]),
+  error_logger:error_msg("Connect = ~p down, Client = ~p, connection = ~p, Reason = ~p",[self(),Client, Connection, Reason]),
   true = demonitor(GunMon, [flush]),
   gun:close(GunPid),
   Client ! {reconnecting, self()},
