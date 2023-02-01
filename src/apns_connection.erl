@@ -330,13 +330,14 @@ connected(EventType, EventContent, StateData) ->
 
 -spec down(_, _, _) -> _.
 down(internal
-    , _
+    , Reason
     , #{ gun_pid         := GunPid
        , gun_monitor     := GunMon
        , client          := Client
        , backoff         := Backoff
        , backoff_ceiling := Ceiling
        }) ->
+  error_logger:error_msg("Client = ~p down, reason = ~p",[Client, Reason]),
   true = demonitor(GunMon, [flush]),
   gun:close(GunPid),
   Client ! {reconnecting, self()},
