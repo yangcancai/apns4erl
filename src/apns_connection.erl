@@ -408,6 +408,11 @@ certfile(#{certfile := Certfile}) ->
 -spec keydata(connection()) -> keydata().
 keydata(#{keydata := Key}) ->
   Key.
+-spec certpassword(connection()) -> list().
+certpassword(#{password := Password}) ->
+  [{password, Password}];
+certpassword(_) ->
+  [].
 
 -spec keyfile(connection()) -> path().
 keyfile(#{keyfile := Keyfile}) ->
@@ -432,7 +437,7 @@ transport_opts(Connection) ->
     cert ->
       Certfile = certfile(Connection),
       Keyfile = keyfile(Connection),
-      [{certfile, Certfile}, {keyfile, Keyfile}];
+      [{certfile, Certfile}, {keyfile, Keyfile}] ++ certpassword(Connection);
     token ->
       []
   end.
